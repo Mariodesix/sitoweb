@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TrovaIlTuoBagnino 💘 — I tuoi Match</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --rose: #ff4b7b;
+      --rose-dark: #d63060;
+      --rose-light: #ff8fab;
+      --text: #2a1520;
+      --muted: #a07080;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #1a0810;
+      font-family: 'DM Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* BG blobs */
+    .bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+    .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.25; animation: float 8s ease-in-out infinite; }
+    .blob-1 { width: 500px; height: 500px; background: #ff1a5e; top: -100px; left: -100px; }
+    .blob-2 { width: 400px; height: 400px; background: #c0006a; bottom: -80px; right: -80px; animation-delay: -3s; }
+    .blob-3 { width: 300px; height: 300px; background: #ff6b9d; top: 40%; left: 60%; animation-delay: -5s; }
+    @keyframes float {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33% { transform: translate(20px,-30px) scale(1.05); }
+      66% { transform: translate(-15px,20px) scale(0.97); }
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      background: rgba(26,8,16,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,75,123,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.5rem;
+      color: var(--rose);
+      font-weight: 700;
+    }
+    .nav-logo span { font-size: 1.3rem; }
+    .nav-actions { display: flex; gap: 18px; align-items: center; }
+    .nav-icon {
+      position: relative;
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .nav-icon:hover { transform: scale(1.2); }
+    .badge {
+      position: absolute;
+      top: -5px; right: -5px;
+      background: var(--rose);
+      color: white;
+      font-size: 0.6rem;
+      font-weight: 700;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nav-user {
+      display: flex; align-items: center; gap: 8px;
+      color: #f0c0cc;
+      font-size: 0.9rem;
+    }
+    .nav-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--rose);
+      object-fit: cover;
+    }
+
+    /* MAIN */
+    main {
+      padding-top: 80px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-bottom: 40px;
+    }
+
+    /* Section title */
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      color: white;
+      font-size: 1.6rem;
+      margin: 28px 0 6px;
+      text-align: center;
+    }
+    .section-sub {
+      color: #a07080;
+      font-size: 0.85rem;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    /* CARD STACK */
+    .card-stack {
+      position: relative;
+      width: 340px;
+      height: 480px;
+      margin: 0 auto;
+    }
+
+    .tinder-card {
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.08s ease;
+      background: #2a1520;
+    }
+    .tinder-card:nth-child(3) { transform: rotate(-4deg) scale(0.94) translateY(12px); z-index: 1; }
+    .tinder-card:nth-child(2) { transform: rotate(2deg) scale(0.97) translateY(6px); z-index: 2; }
+    .tinder-card:nth-child(1) { transform: rotate(0deg) scale(1); z-index: 3; }
+    .tinder-card.dragging { transition: none; cursor: grabbing; }
+    .tinder-card.fly-left  { transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(-120%) rotate(-25deg) !important; opacity: 0; }
+    .tinder-card.fly-right { transition: transform 0.5s ease, opacity 0.5s ease; transform: translateX(120%) rotate(25deg) !important; opacity: 0; }
+
+    .card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .card-gradient {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 55%;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+    }
+    .card-info {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 20px;
+    }
+    .card-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      color: white;
+      font-weight: 700;
+    }
+    .card-age { color: #f0c0cc; font-size: 0.95rem; }
+    .card-bio {
+      color: #d0a0b0;
+      font-size: 0.82rem;
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .tag {
+      background: rgba(255,75,123,0.25);
+      border: 1px solid rgba(255,75,123,0.4);
+      color: #ff8fab;
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    /* LIKE / DISLIKE overlay labels */
+    .card-stamp {
+      position: absolute;
+      top: 28px;
+      font-size: 2.4rem;
+      font-weight: 900;
+      letter-spacing: 2px;
+      border: 4px solid;
+      border-radius: 8px;
+      padding: 4px 14px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      pointer-events: none;
+      text-transform: uppercase;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .stamp-like { left: 20px; color: #00e07a; border-color: #00e07a; transform: rotate(-15deg); }
+    .stamp-nope { right: 20px; color: var(--rose); border-color: var(--rose); transform: rotate(15deg); }
+
+    /* BUTTONS */
+    .card-btns {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 22px;
+    }
+    .btn-action {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .btn-nope  { background: white; }
+    .btn-super { background: #00b4ff; }
+    .btn-like  { background: linear-gradient(135deg, var(--rose), var(--rose-dark)); }
+    .btn-action:hover { transform: scale(1.15); }
+    .btn-action:active { transform: scale(0.95); }
+
+    /* MATCH BANNER */
+    .match-banner {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      animation: fadeIn 0.3s ease;
+    }
+    .match-banner.show { display: flex; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .match-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 3rem;
+      color: var(--rose);
+      animation: popIn 0.5s cubic-bezier(0.23,1,0.32,1) both;
+    }
+    @keyframes popIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
+    .match-sub { color: #f0c0cc; margin-top: 8px; font-size: 1rem; }
+    .match-photos {
+      display: flex;
+      gap: 20px;
+      margin: 28px 0;
+    }
+    .match-photo {
+      width: 100px; height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--rose);
+      animation: popIn 0.5s cubic-bezier(0.23,1,0.32,1) 0.2s both;
+    }
+    .match-heart {
+      font-size: 2.5rem;
+      align-self: center;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+    .btn-match-msg {
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 14px 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(255,75,123,0.5);
+      transition: transform 0.2s;
+    }
+    .btn-match-msg:hover { transform: scale(1.05); }
+    .btn-match-skip {
+      background: none;
+      color: #a07080;
+      border: none;
+      margin-top: 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* ===== NOTIFICATION POPUP ===== */
+    .notif-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0,0,0,0.7);
+      align-items: center;
+      justify-content: center;
+    }
+    .notif-overlay.show { display: flex; }
+
+    .notif-box {
+      background: white;
+      border-radius: 24px;
+      padding: 32px 32px 28px;
+      width: 340px;
+      max-width: 92vw;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      animation: popIn 0.4s cubic-bezier(0.23,1,0.32,1) both;
+      position: relative;
+    }
+    .notif-icon { font-size: 3rem; display: block; margin-bottom: 10px; animation: pulse 1.2s ease-in-out infinite; }
+    .notif-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    .notif-msg {
+      color: #7a5060;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .notif-btns {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 20px 20px;
+      margin: -60px -20px -20px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 0 0 24px 24px;
+    }
+    .btn-yes {
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 13px 36px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(255,75,123,0.4);
+      transition: transform 0.15s;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+    .btn-yes:hover { transform: scale(1.05); }
+
+    .btn-no {
+      background: #f5e8ec;
+      color: #c05070;
+      border: 1.5px solid #f0c0cc;
+      border-radius: 12px;
+      padding: 13px 28px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Opened chat */
+    .chat-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 400;
+      background: rgba(26,8,16,0.97);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .chat-overlay.show { display: flex; }
+    .chat-box {
+      background: white;
+      border-radius: 28px;
+      width: 360px;
+      max-width: 94vw;
+      overflow: hidden;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      animation: popIn 0.5s cubic-bezier(0.23,1,0.32,1) both;
+    }
+    .chat-header {
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .chat-avatar {
+      width: 42px; height: 42px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.5);
+    }
+    .chat-name { color: white; font-weight: 600; font-size: 1rem; }
+    .chat-status { color: rgba(255,255,255,0.7); font-size: 0.75rem; }
+    .chat-messages {
+      padding: 20px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #fff5f7;
+    }
+    .msg {
+      max-width: 75%;
+      padding: 10px 16px;
+      border-radius: 18px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      animation: popIn 0.3s ease both;
+    }
+    .msg.them {
+      background: white;
+      color: var(--text);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .msg.me {
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-input-row {
+      display: flex;
+      gap: 10px;
+      padding: 14px 16px;
+      border-top: 1px solid #f0d0d8;
+      background: white;
+    }
+    .chat-input {
+      flex: 1;
+      border: 1.5px solid #f0d0d8;
+      border-radius: 20px;
+      padding: 10px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      color: var(--text);
+    }
+    .chat-input:focus { border-color: var(--rose); }
+    .btn-send {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, var(--rose), var(--rose-dark));
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .btn-close-chat {
+      margin-top: 16px;
+      color: #d0a0b0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-decoration: underline;
+    }
+
+    /* VIDEO OVERLAY */
+    .video-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: #000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.4s ease;
+    }
+    .video-overlay.show { display: flex; }
+    .video-overlay video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .btn-close-video {
+      position: absolute;
+      top: 18px;
+      right: 20px;
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: white;
+      font-size: 1.4rem;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      transition: background 0.2s;
+      z-index: 10;
+    }
+    .btn-close-video:hover { background: rgba(255,75,123,0.5); }
+
+    /* ===== RESPONSIVE MOBILE ===== */
+    @media (max-width: 480px) {
+      nav { padding: 12px 16px; }
+      .nav-logo { font-size: 1.2rem; }
+      .nav-actions { gap: 12px; }
+      .nav-icon { font-size: 1.2rem; }
+      .nav-user { font-size: 0.8rem; }
+      .nav-avatar { width: 28px; height: 28px; }
+
+      main { padding-top: 70px; padding-bottom: 30px; }
+      .section-title { font-size: 1.2rem; margin: 16px 0 4px; }
+      .section-sub { font-size: 0.75rem; margin-bottom: 16px; }
+
+      .card-stack { width: calc(100vw - 32px); height: 62vw; min-height: 340px; max-height: 480px; }
+      .card-btns { gap: 14px; margin-top: 16px; }
+      .btn-action { width: 52px; height: 52px; font-size: 1.3rem; }
+
+      .match-title { font-size: 2.2rem; }
+      .match-photo { width: 80px; height: 80px; }
+      .match-heart { font-size: 2rem; }
+      .btn-match-msg { padding: 12px 28px; font-size: 0.95rem; }
+
+      .notif-box { padding: 24px 20px 20px; width: calc(100vw - 40px); }
+      .notif-icon { font-size: 2.4rem; }
+      .notif-title { font-size: 1.1rem; }
+      .notif-msg { font-size: 0.85rem; margin-bottom: 18px; }
+      .notif-btns { padding: 80px 16px 16px; margin: -80px -16px -16px; }
+      .btn-yes, .btn-no { padding: 12px 22px; font-size: 0.9rem; }
+
+      .chat-box { width: calc(100vw - 20px); border-radius: 20px; }
+      .chat-messages { min-height: 160px; }
+    }
+
+    @media (max-width: 360px) {
+      .card-stack { height: 300px; }
+      .btn-yes, .btn-no { padding: 11px 16px; font-size: 0.82rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span>💘</span> TrovaIlTuoBagnino</div>
+  <div class="nav-actions">
+    <div class="nav-icon" onclick="showNotif()">💬<div class="badge">1</div></div>
+    <div class="nav-icon">🔔<div class="badge">3</div></div>
+    <div class="nav-user">
+      <img class="nav-avatar" src="https://i.imgur.com/DxkZaAx.jpeg" alt="Perry"/>
+      Perry
+    </div>
+  </div>
+</nav>
+
+<main>
+  <div class="section-title">Scopri chi ti aspetta 💕</div>
+  <div class="section-sub">Swipa a destra per mettere like, a sinistra per passare</div>
+
+  <!-- CARD STACK -->
+  <div class="card-stack" id="cardStack">
+
+    <!-- Card 3 (in fondo) -->
+    <div class="tinder-card" id="card3">
+      <img class="card-img" src="https://i.imgur.com/4oWAGUt.jpeg" alt="Mario"/>
+      <div class="card-gradient"></div>
+      <div class="card-info">
+        <div class="card-name">Mario <span style="font-size:1rem">✨</span></div>
+        <div class="card-age">20 anni • Cosenza</div>
+        <div class="card-bio">" Mi piacciono le bionde che si chiamano Erika "</div>
+        <div class="card-tags"><span class="tag">🎭 Arte</span><span class="tag">☕ Caffè</span><span class="tag">🐱 Gatti</span></div>
+      </div>
+      <div class="card-stamp stamp-like">LIKE</div>
+      <div class="card-stamp stamp-nope">NOPE</div>
+    </div>
+
+
+  <!-- BUTTONS -->
+  <div class="card-btns">
+    <button class="btn-action btn-nope" onclick="swipeLeft()" title="Passa">❌</button>
+    <button class="btn-action btn-super" onclick="superLike()" title="Super Like">⭐</button>
+    <button class="btn-action btn-like" onclick="swipeRight()" title="Like">❤️</button>
+  </div>
+</main>
+
+<!-- MATCH BANNER -->
+<div class="match-banner" id="matchBanner">
+  <div class="match-title">È un Match! 🎉</div>
+  <div class="match-sub">Piaci anche tu a Sofia!</div>
+  <div class="match-photos">
+    <img class="match-photo" src="https://api.dicebear.com/7.x/adventurer/svg?seed=Perry&backgroundColor=ffb3c6" alt="Perry"/>
+    <div class="match-heart">💖</div>
+    <img class="match-photo" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia2024&backgroundColor=ffd6e7" alt="Sofia"/>
+  </div>
+  <button class="btn-match-msg" onclick="closeBanner(); showNotif();">Invia un messaggio 💬</button>
+  <button class="btn-match-skip" onclick="closeBanner()">Continua a scoprire</button>
+</div>
+
+<!-- NOTIFICATION POPUP -->
+<div class="notif-overlay" id="notifOverlay">
+  <div class="notif-box">
+    <span class="notif-icon">💌</span>
+    <div class="notif-title">Hai un nuovo messaggio!</div>
+    <div class="notif-msg">Il tuo Match ti ha inviato un messaggio,<br>vuoi aprirlo?</div>
+    <div class="notif-btns" id="notifBtns">
+      <button class="btn-yes" onclick="openChat()">Sì, aprilo! 💕</button>
+      <button class="btn-no" id="btnNo" onmouseenter="runAway()" ontouchstart="runAway()">No 🙅‍♀️</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div class="chat-overlay" id="chatOverlay">
+  <div class="chat-box">
+    <div class="chat-header">
+      <img class="chat-avatar" src="https://api.dicebear.com/7.x/personas/svg?seed=Sofia2024&backgroundColor=ffd6e7" alt="Sofia"/>
+      <div>
+        <div class="chat-name">Sofia 💫</div>
+        <div class="chat-status">Online adesso ✅</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg them" style="animation-delay:0.1s">Ciao Perry! 😊 finalmente ci scriviamo!</div>
+      <div class="msg them" style="animation-delay:0.3s">Ho visto che ti piace la musica... anche tu? 🎵</div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" type="text" placeholder="Scrivi un messaggio... 💬" onkeydown="if(event.key==='Enter') sendMsg()"/>
+      <button class="btn-send" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+  <button class="btn-close-chat" onclick="document.getElementById('chatOverlay').classList.remove('show')">← Torna ai profili</button>
+</div>
+
+<!-- VIDEO OVERLAY -->
+<div class="video-overlay" id="videoOverlay">
+  <button class="btn-close-video" onclick="closeVideo()" title="Chiudi">✕</button>
+  <video id="surpriseVideo" controls autoplay playsinline>
+    <!-- 🎬 CAMBIA "tuo_video.mp4" con il nome del tuo file video! -->
+    <source src="TrovailTuobagnino.mp4" type="video/mp4">
+    Il tuo browser non supporta il video.
+  </video>
+</div>
+
+<script>
+  // ===== SWIPE LOGIC =====
+  let cards = ['card1','card2','card3'];
+  let cardIndex = 0;
+  let swipeCount = 0;
+
+  function getTopCard() {
+    return document.getElementById(cards[cardIndex]);
+  }
+
+  function swipeLeft() {
+    const card = getTopCard();
+    if (!card) return;
+    card.classList.add('fly-left');
+    setTimeout(() => nextCard(), 500);
+  }
+
+  function swipeRight() {
+    const card = getTopCard();
+    if (!card) return;
+    card.classList.add('fly-right');
+    swipeCount++;
+    setTimeout(() => {
+      nextCard();
+      if (swipeCount === 1) showMatch();
+    }, 500);
+  }
+
+  function superLike() {
+    const card = getTopCard();
+    if (!card) return;
+    card.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+    card.style.transform = 'translateY(-130%) scale(1.1)';
+    card.style.opacity = '0';
+    swipeCount++;
+    setTimeout(() => { nextCard(); showMatch(); }, 500);
+  }
+
+  function nextCard() {
+    cardIndex++;
+    if (cardIndex >= cards.length) {
+      document.querySelector('.section-title').textContent = "Hai visto tutti i profili 😊";
+      document.querySelector('.section-sub').textContent = "Torna più tardi per nuovi match!";
+    }
+  }
+
+  // Drag to swipe
+  const topCard = document.getElementById('card1');
+  let startX = 0, currentX = 0, isDragging = false;
+
+  topCard.addEventListener('mousedown', (e) => { isDragging = true; startX = e.clientX; topCard.classList.add('dragging'); });
+  document.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    currentX = e.clientX - startX;
+    const rotate = currentX * 0.08;
+    topCard.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+    const likeStamp = document.getElementById('stampLike1');
+    const nopeStamp = document.getElementById('stampNope1');
+    if (currentX > 40) { likeStamp.style.opacity = Math.min(1, (currentX-40)/80); nopeStamp.style.opacity = 0; }
+    else if (currentX < -40) { nopeStamp.style.opacity = Math.min(1, (-currentX-40)/80); likeStamp.style.opacity = 0; }
+    else { likeStamp.style.opacity = 0; nopeStamp.style.opacity = 0; }
+  });
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    topCard.classList.remove('dragging');
+    if (currentX > 80) { swipeRight(); }
+    else if (currentX < -80) { swipeLeft(); }
+    else { topCard.style.transform = ''; }
+    currentX = 0;
+  });
+
+  // Touch
+  topCard.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; });
+  topCard.addEventListener('touchmove', (e) => {
+    currentX = e.touches[0].clientX - startX;
+    const rotate = currentX * 0.08;
+    topCard.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+  });
+  topCard.addEventListener('touchend', () => {
+    if (currentX > 80) swipeRight();
+    else if (currentX < -80) swipeLeft();
+    else topCard.style.transform = '';
+    currentX = 0;
+  });
+
+  // ===== MATCH =====
+  function showMatch() {
+    document.getElementById('matchBanner').classList.add('show');
+  }
+  function closeBanner() {
+    document.getElementById('matchBanner').classList.remove('show');
+  }
+
+  // ===== NOTIFICATION =====
+  function showNotif() {
+    document.getElementById('notifOverlay').classList.add('show');
+    resetNoBtn();
+  }
+  function closeNotif() {
+    document.getElementById('notifOverlay').classList.remove('show');
+  }
+  function openChat() {
+    closeNotif();
+    const overlay = document.getElementById('videoOverlay');
+    const video = document.getElementById('surpriseVideo');
+    overlay.classList.add('show');
+    video.load();
+    video.play().catch(() => {});
+  }
+
+  function closeVideo() {
+    const overlay = document.getElementById('videoOverlay');
+    const video = document.getElementById('surpriseVideo');
+    video.pause();
+    video.currentTime = 0;
+    overlay.classList.remove('show');
+  }
+
+  // ===== RUNAWAY "NO" BUTTON =====
+  const btnNo = document.getElementById('btnNo');
+  let runCount = 0;
+  let currentTx = 0, currentTy = 0;
+
+  function resetNoBtn() {
+    runCount = 0;
+    currentTx = 0;
+    currentTy = 0;
+    btnNo.style.transform = '';
+    btnNo.textContent = 'No 🙅‍♀️';
+  }
+
+  function runAway() {
+    runCount++;
+
+    // Calcola spazio disponibile dentro .notif-btns attorno al bottone No
+    const container = document.getElementById('notifBtns');
+    const containerRect = container.getBoundingClientRect();
+    const btnRect = btnNo.getBoundingClientRect();
+
+    // Distanza massima prima di uscire dal container (con margine)
+    const margin = 10;
+    const maxRight  =  containerRect.right  - btnRect.right  - margin;
+    const maxLeft   = -(btnRect.left - containerRect.left - margin);
+    const maxDown   =  containerRect.bottom - btnRect.bottom - margin;
+    const maxUp     = -(btnRect.top  - containerRect.top  - margin);
+
+    // Direzione opposta al centro (scappa sempre via)
+    const centerX = containerRect.left + containerRect.width / 2;
+    const centerY = containerRect.top  + containerRect.height / 2;
+    const btnCx = btnRect.left + btnRect.width / 2;
+    const btnCy = btnRect.top  + btnRect.height / 2;
+
+    // Angolo che punta LONTANO dal centro
+    let angle = Math.atan2(btnCy - centerY, btnCx - centerX);
+    // Aggiungi un po' di randomicità
+    angle += (Math.random() - 0.5) * 1.2;
+
+    const step = 35 + runCount * 12;
+    let dx = Math.cos(angle) * step;
+    let dy = Math.sin(angle) * step;
+
+    // Clamp per non uscire
+    if (dx > 0) dx = Math.min(dx, maxRight);
+    else         dx = Math.max(dx, maxLeft);
+    if (dy > 0) dy = Math.min(dy, maxDown);
+    else         dy = Math.max(dy, maxUp);
+
+    currentTx += dx;
+    currentTy += dy;
+
+    btnNo.style.transition = 'transform 0.15s cubic-bezier(0.23,1,0.32,1)';
+    btnNo.style.transform = `translate(${currentTx}px, ${currentTy}px)`;
+
+    if (runCount >= 5)      btnNo.textContent = '😤 No no no!';
+    else if (runCount >= 3) btnNo.textContent = '🏃‍♀️ No!';
+  }
+
+  // Su mobile usa touchstart
+  btnNo.addEventListener('touchstart', (e) => { e.preventDefault(); runAway(); }, { passive: false });
+
+  // ===== CHAT =====
+  const replies = [
+    "Davvero? Anche a me! 😍",
+    "Sei troppo carino/a! 🥰",
+    "Dobbiamo assolutamente uscire insieme! ☕",
+    "Lo sapevo che ci saremmo piaciuti! 💕",
+    "Haha sei divertente! 😂❤️"
+  ];
+  let replyIndex = 0;
+
+  function sendMsg() {
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const msgs = document.getElementById('chatMessages');
+
+    const myMsg = document.createElement('div');
+    myMsg.className = 'msg me';
+    myMsg.textContent = text;
+    msgs.appendChild(myMsg);
+    input.value = '';
+    msgs.scrollTop = msgs.scrollHeight;
+
+    setTimeout(() => {
+      const theirMsg = document.createElement('div');
+      theirMsg.className = 'msg them';
+      theirMsg.textContent = replies[replyIndex % replies.length];
+      replyIndex++;
+      msgs.appendChild(theirMsg);
+      msgs.scrollTop = msgs.scrollHeight;
+    }, 900);
+  }
+
+  // Auto-show notification after 2 seconds
+  setTimeout(showNotif, 2000);
+</script>
+</body>
+</html>
